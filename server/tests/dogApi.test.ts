@@ -1,35 +1,43 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import request from 'supertest';
-import express from 'express';
-import * as dogController from '../controllers/dogController';
+import express, { Request, Response } from 'express';
 import dogRoutes from '../routes/dogRoutes';
-
-vi.mock('../controllers/dogController');
 
 const app = express();
 app.use(express.json());
 app.use('/api/dogs', dogRoutes);
 
-describe('dogApi', () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    error: 'Route not found',
   });
+});
 
-  // Test 5 - Negative test
-  test('should return 500 with success false and an error message', async () => {
-    vi.spyOn(dogController, 'getDogImage').mockImplementation(async (_req, res) => {
-      res.status(500).json({
-        success: false,
-        error: 'Failed to fetch dog image: Network error',
-      });
-    });
-
+describe('dogApi', () => {
+  // Test 1
+  test('GET /api/dogs/random should return a random dog image with status 200', async () => {
     const response = await request(app).get('/api/dogs/random');
 
-    expect(response.status).toBe(500);
-    expect(response.body).toEqual({
-      success: false,
-      error: 'Failed to fetch dog image: Network error',
-    });
+    expect(response.status).toBe(200);
+
+    expect(response.body.success).toBe(true);
+
+    expect(response.body.data).toBeDefined();
+
+    expect(response.body.data).toHaveProperty('imageUrl');
+
+    expect(typeof response.body.data.imageUrl).toBe('string');
+  });
+
+  // Test 2
+  test('GET /api/dogs/invalid should return 404 with an error message', async () => {
+    const response = await request(app).get('/api/dogs/invalid');
+
+    expect(response.status).toBe(404);
+
+    expect(response.body).toHaveProperty('error');
+    
+    expect(response.body.error).toBe('Route not found');
   });
 });

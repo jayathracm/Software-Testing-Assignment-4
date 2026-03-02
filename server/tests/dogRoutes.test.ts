@@ -35,4 +35,22 @@ describe('dogRoutes', () => {
     expect(response.body.success).toBe(true);
     expect(response.body.data.imageUrl).toBe(mockResponseData.data.imageUrl);
   });
+
+  // Test 5 - Negative test
+  test('should return 500 with success false and an error message', async () => {
+    vi.spyOn(dogController, 'getDogImage').mockImplementation(async (_req, res) => {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch dog image: Network error',
+      });
+    });
+
+    const response = await request(app).get('/api/dogs/random');
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({
+      success: false,
+      error: 'Failed to fetch dog image: Network error',
+    });
+  });
 });
